@@ -76,8 +76,8 @@
                 </div>
                 <p class="text-gray-400">Adicione, edite ou remova planos de saúde</p>
               </div>
-              <button
-                class="inline-flex items-center cursor-pointer justify-center whitespace-nowrap rounded-md text-sm font-medium bg-[#00bbff] text-white px-4 py-2 gap-2 hover:bg-[#0099cc] transition-colors duration-300">
+              <button @click="showModal = 'plano'"
+                class="inline-flex items-center  cursor-pointer justify-center whitespace-nowrap rounded-md text-sm font-medium bg-[#00bbff] text-white px-4 py-2 gap-2 hover:bg-[#0099cc] transition-colors duration-300">
                 <Icon icon="mdi:plus" width="16" height="16" />
                 <span>Novo plano</span>
               </button>
@@ -95,12 +95,11 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr class="border-b border-gray-300">
-                      <td class="p-4 align-middle">Plano Básico Individual</td>
-                      <td class="p-4 align-middle truncate max-w-xs">Plano de saúde ideal para pessoas que buscam
-                        cobertura essencial com consultas e exames básicos.</td>
-                      <td class="p-4 align-middle">R$ 189,90</td>
-                      <td class="p-4 align align-middle">05/11/2025</td>
+                    <tr v-for="plan in plansAvailable" class="border-b border-gray-300">
+                      <td class="p-4 align-middle">{{ plan.name }}</td>
+                      <td class="p-4 align-middle truncate max-w-xs">{{ plan.description }}</td>
+                      <td class="p-4 align-middle">{{ plan.price }}</td>
+                      <td class="p-4 align align-middle">{{ plan.date }}</td>
                       <td class="p-4 align-middle">
                         <div class="flex justify-end gap-2">
                           <button
@@ -131,7 +130,7 @@
                 </div>
                 <p class="text-gray-400">Adicione, edite ou remova clientes do sistema</p>
               </div>
-              <button
+              <button @click="showModal = 'cliente'"
                 class="inline-flex items-center cursor-pointer justify-center whitespace-nowrap rounded-md text-sm font-medium bg-[#00bbff] text-white px-4 py-2 gap-2 hover:bg-[#0099cc] transition-colors duration-300">
                 <Icon icon="mdi:plus" width="16" height="16" />
                 <span>Novo Cliente</span>
@@ -186,7 +185,7 @@
                 </div>
                 <p class="text-gray-400">Registre e acompanhe as vendas de planos</p>
               </div>
-              <button
+              <button @click="showModal = 'compra'"
                 class="inline-flex items-center cursor-pointer justify-center whitespace-nowrap rounded-md text-sm font-medium bg-[#00bbff] text-white px-4 py-2 gap-2 hover:bg-[#0099cc] transition-colors duration-300">
                 <Icon icon="mdi:plus" width="16" height="16" />
                 <span>Nova Compra</span>
@@ -245,13 +244,218 @@
         </div>
       </div>
     </main>
+
+    <!-- Modal Adicionar Plano -->
+    <div v-if="showModal === 'plano'" class="fixed inset-0 h-full w-full bg-black/80 flex items-center justify-center">
+      <div class="relative bg-white rounded-lg shadow-xl mx-auto p-8 w-full max-w-md">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+          <div class="flex flex-col">
+            <h3 class="text-xl font-bold">Adicionar Plano</h3>
+            <p class="text-gray-400">Preencha os dados do novo plano de saúde</p>
+          </div>
+          <button @click="closeModal" class="text-gray-600 hover:text-gray-800 cursor-pointer">
+            <Icon icon="mdi:close" width="24" height="24" />
+          </button>
+        </div>
+
+        <!-- Formulário -->
+        <form @submit.prevent="handleSubmit" class="flex flex-col gap-4">
+          <div class="flex flex-col gap-2">
+            <label class="text-sm text-gray-600">Nome do Plano</label>
+            <input v-model="newPlan.name" type="text"
+              class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-[#00bbff]"
+              placeholder="Digite o nome do plano" required />
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label class="text-sm text-gray-600">Preço (R$)</label>
+            <input v-model="newPlan.price" type="number" step="0.01"
+              class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-[#00bbff]"
+              placeholder="0,00" required />
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label class="text-sm text-gray-600">Descrição</label>
+            <textarea v-model="newPlan.description" rows="4"
+              class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-[#00bbff] resize-none"
+              placeholder="Digite a descrição do plano" required></textarea>
+          </div>
+
+          <button type="submit"
+            class="mt-4 cursor-pointer bg-[#00bbff] text-white px-4 py-2 rounded-lg hover:bg-[#0099cc] transition-colors duration-300">
+            Adicionar
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div v-if="showModal === 'cliente'"
+      class="fixed inset-0 h-full w-full bg-black/80 flex items-center justify-center">
+      <div class="relative bg-white rounded-lg shadow-xl mx-auto p-8 w-full max-w-md">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+          <div class="flex flex-col">
+            <h3 class="text-xl font-bold">Adicionar Cliente</h3>
+            <p class="text-gray-400">Preencha os dados do novo cliente</p>
+          </div>
+          <button @click="closeModal" class="text-gray-600 hover:text-gray-800 cursor-pointer">
+            <Icon icon="mdi:close" width="24" height="24" />
+          </button>
+        </div>
+
+        <!-- Formulário -->
+        <form @submit.prevent="handleSubmit" class="flex flex-col gap-4">
+          <div class="flex flex-col gap-2">
+            <label class="text-sm text-gray-600">Nome</label>
+            <input v-model="newClient.name" type="text"
+              class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-[#00bbff]"
+              placeholder="Digite o nome do cliente" required />
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-sm text-gray-600">E-mail</label>
+            <input v-model="newClient.email" type="text"
+              class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-[#00bbff]"
+              placeholder="Digite o e-mail do cliente" required />
+          </div>
+          <button type="submit"
+            class="mt-4 cursor-pointer bg-[#00bbff] text-white px-4 py-2 rounded-lg hover:bg-[#0099cc] transition-colors duration-300">
+            Adicionar
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div v-if="showModal === 'compra'" class="fixed inset-0 h-full w-full bg-black/80 flex items-center justify-center">
+      <div class="relative bg-white rounded-lg shadow-xl mx-auto p-8 w-full max-w-md">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+          <div class="flex flex-col">
+            <h3 class="text-xl font-bold">Registrar Compra</h3>
+            <p class="text-gray-400">Preencha os dados da nova compra</p>
+          </div>
+          <button @click="closeModal" class="text-gray-600 hover:text-gray-800 cursor-pointer">
+            <Icon icon="mdi:close" width="24" height="24" />
+          </button>
+        </div>
+
+        <!-- Formulário -->
+        <form @submit.prevent="handleSubmit" class="flex flex-col gap-4">
+          <div class="flex flex-col gap-2">
+            <label class="text-sm text-gray-600">Cliente</label>
+            <div class="relative">
+              <button @click.prevent="showClientDropdown = !showClientDropdown"
+                class="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2 text-left cursor-pointer focus:outline-none focus:border-[#00bbff] bg-white">
+                {{ selectedClient ? `${selectedClient.name} (${selectedClient.email})` : 'Selecione um cliente' }}
+                <Icon icon="mdi:keyboard-arrow-down" width="16" height="16" style="color: gray;" />
+              </button>
+              <div v-if="showClientDropdown"
+                class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg">
+                <ul>
+                  <li v-for="client in clients" :key="client.email" @click="selectClient(client)" class="
+                    px-4 py-2 cursor-pointer hover:bg-[#00f6ff]
+                  ">
+                    {{ client.name }} ({{ client.email }})
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-sm text-gray-600">Plano</label>
+            <div class="relative">
+              <button @click.prevent="showPlanDropdown = !showPlanDropdown"
+                class="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2 text-left cursor-pointer focus:outline-none focus:border-[#00bbff] bg-white">
+                {{ selectedPlan ? `${selectedPlan.name} (${selectedPlan.price})` : 'Selecione um plano' }}
+                <Icon icon="mdi:keyboard-arrow-down" width="16" height="16" style="color: gray;" />
+              </button>
+              <div v-if="showPlanDropdown"
+                class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg">
+                <ul>
+                  <li v-for="plan in plansAvailable" :key="plan.price" @click="selectPlan(plan)" class="
+                    px-4 py-2 cursor-pointer hover:bg-[#00f6ff]
+                  ">
+                    {{ plan.name }} ({{ plan.price }})
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-sm text-gray-600">Quantidade</label>
+              <input v-model="newPurchase.quantity" type="number"
+                class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-[#00bbff]"
+                required />
+            </div>
+          </div>
+
+          <button type="submit"
+            class="mt-4 cursor-pointer bg-[#00bbff] text-white px-4 py-2 rounded-lg hover:bg-[#0099cc] transition-colors duration-300">
+            Adicionar
+          </button>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
-
 import { Icon } from "@iconify/vue";
 
 const activeTab = ref('planos');
+const showModal = ref('');
+const showClientDropdown = ref(false);
+const showPlanDropdown = ref(false);
+const selectedClient = ref(null);
+const selectedPlan = ref(null);
+
+const newPlan = ref({
+  name: '',
+  price: '',
+  description: ''
+});
+
+const newClient = ref({
+  name: '',
+  email: ''
+});
+
+const newPurchase = ref({
+  client: null,
+  plan: null,
+  quantity: 1
+});
+
+const clients = [
+  { name: 'João Silva', email: 'joao.silva@email.com' },
+  { name: 'Maria Santos', email: 'maria.santos@email.com' },
+  { name: 'Pedro Oliveira', email: 'pedro.oliveira@email.com' },
+  { name: 'Ana Costa', email: 'ana.costa@email.com' }
+];
+
+const plansAvailable = [
+  { name: 'Plano Básico Individual', price: 189.90, description: 'Plano de saúde ideal para pessoas que buscam cobertura essencial com consultas e exames básicos.', date: '05/11/2025' },
+  { name: 'Plano Familiar Essencial', price: 349.90, description: 'Plano de saúde para famílias, oferecendo cobertura abrangente para todos os membros.', date: '05/11/2025'},
+  { name: 'Plano Premium Executivo', price: 789.90, description: 'Plano de saúde completo com cobertura ampla, ideal para profissionais que buscam o melhor em atendimento médico.', date: '05/11/2025' },
+  { name: 'Plano Empresarial Corporativo', price: 1299.90, description: 'Plano de saúde voltado para empresas, oferecendo benefícios exclusivos para colaboradores.', date: '05/11/2025' }
+];
+
+const closeModal = () => {
+  showModal.value = '';
+};
+
+const handleSubmit = (value) => {
+  console.log('Form submitted:', value);
+  showModal.value = '';
+};
+
+const selectClient = (client) => {
+  selectedClient.value = client;
+  showClientDropdown.value = false;
+}
+
+const selectPlan = (plan) => {
+  selectedPlan.value = plan;
+  showPlanDropdown.value = false;
+}
 </script>
