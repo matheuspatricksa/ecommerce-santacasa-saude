@@ -426,26 +426,33 @@ const newPurchase = ref({
   quantity: 1
 });
 
-const clients = [
+const clients = ref([
   { name: 'João Silva', email: 'joao.silva@email.com' },
   { name: 'Maria Santos', email: 'maria.santos@email.com' },
   { name: 'Pedro Oliveira', email: 'pedro.oliveira@email.com' },
   { name: 'Ana Costa', email: 'ana.costa@email.com' }
-];
+]);
 
-const plansAvailable = [
+const plansAvailable = ref([
   { name: 'Plano Básico Individual', price: 189.90, description: 'Plano de saúde ideal para pessoas que buscam cobertura essencial com consultas e exames básicos.', date: '05/11/2025' },
   { name: 'Plano Familiar Essencial', price: 349.90, description: 'Plano de saúde para famílias, oferecendo cobertura abrangente para todos os membros.', date: '05/11/2025'},
   { name: 'Plano Premium Executivo', price: 789.90, description: 'Plano de saúde completo com cobertura ampla, ideal para profissionais que buscam o melhor em atendimento médico.', date: '05/11/2025' },
   { name: 'Plano Empresarial Corporativo', price: 1299.90, description: 'Plano de saúde voltado para empresas, oferecendo benefícios exclusivos para colaboradores.', date: '05/11/2025' }
-];
+]);
 
 const closeModal = () => {
   showModal.value = '';
 };
 
-const handleSubmit = (value) => {
-  console.log('Form submitted:', value);
+const handleSubmit = () => {
+  console.log('Formulário enviado:', newPlan.value);
+  plansAvailable.value.push({
+    name: newPlan.value.name,
+    price: newPlan.value.price,
+    description: newPlan.value.description,
+    date: new Date().toLocaleDateString()
+  });
+  newPlan.value = { name: '', price: '', description: '' };
   showModal.value = '';
 };
 
