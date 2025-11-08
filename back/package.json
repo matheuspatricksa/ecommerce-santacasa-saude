@@ -1,0 +1,22 @@
+{
+  "name": "santa-casa-saude-back-end",
+  "version": "1.0.0",
+  "description": "API para a aplicação Ecommerce Santa Casa Saúde",
+  "license": "MIT License",
+  "author": "Matheus Patrick",
+  "type": "module",
+  "main": "src/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon src/app.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "fs": "^0.0.1-security",
+    "https": "^1.0.0",
+    "nodemon": "^3.1.10",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
+  }
+}
