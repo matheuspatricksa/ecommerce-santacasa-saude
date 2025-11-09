@@ -9,21 +9,31 @@ import { createPurchaseTable } from './controller/purchases.js';
 
 const app = express();
 
-createPlanTable();
-createClientTable();
-createPurchaseTable();
-
 app.use(express.json());
 app.use(cors());
 app.use(router);
 
-app.listen(3000, () => {
-    console.log('API running on port 3000');
-})
+async function start() {
+    try {
+        // inicializa/create tabelas e seeds de forma síncrona
+        await createPlanTable();
+        await createClientTable();
+        await createPurchaseTable();
 
-https.createServer({
-    key: fs.readFileSync('src/SSL/code.key'),
-    cert: fs.readFileSync('src/SSL/code.crt'),
-}, app).listen(3443, () => {
-    console.log('HTTPS API running on port 3443');
-});
+        app.listen(3000, () => {
+            console.log('API running on port 3000');
+        });
+
+        https.createServer({
+            key: fs.readFileSync('src/SSL/code.key'),
+            cert: fs.readFileSync('src/SSL/code.crt'),
+        }, app).listen(3443, () => {
+            console.log('HTTPS API running on port 3443');
+        });
+    } catch (err) {
+        console.error('Failed to start server:', err);
+        process.exit(1);
+    }
+}
+
+start();

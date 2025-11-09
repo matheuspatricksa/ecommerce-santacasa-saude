@@ -14,21 +14,21 @@ router.get('/', (req, res) => {
 });
 
 // Plans routes
-router.get('/plans', selectPlans); //ok
-router.get('/plan', selectPlan); //ok
-router.post('/plan', insertPlan); //ok
-router.put('/plan', updatePlan); //ok
-router.delete('/plan', deletePlan); //ok
+router.get('/plans', selectPlans);
+router.get('/plan', selectPlan);
+router.post('/plan', insertPlan);
+router.put('/plan', updatePlan);
+router.delete('/plan', deletePlan);
 
 // Clients routes
-router.get('/clients', selectClients); //ok
-router.get('/client', selectClient); //ok
-router.post('/client', insertClient); //ok
-router.put('/client', updateClient);  //ok
-router.delete('/client', deleteClient); //ok
+router.get('/clients', selectClients);
+router.get('/client', selectClient);
+router.post('/client', insertClient);
+router.put('/client', updateClient);
+router.delete('/client', deleteClient);
 
 // Purchases routes
-router.get('/purchases', selectPurchases); //ok
-router.post('/purchase', insertPurchase); //ok
+router.get('/purchases', selectPurchases);
+router.post('/purchase', insertPurchase);
 
 export default router;

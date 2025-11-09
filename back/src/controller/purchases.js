@@ -1,8 +1,8 @@
 import { openDb } from "../configDB.js";
 
 export async function createPurchaseTable() {
-  openDb().then((db) => {
-    db.exec(`
+  const db = await openDb();
+  await db.exec(`
       CREATE TABLE IF NOT EXISTS purchases
       (id INTEGER PRIMARY KEY AUTOINCREMENT,
       client_id INTEGER NOT NULL,
@@ -13,16 +13,19 @@ export async function createPurchaseTable() {
       FOREIGN KEY (plan_id) REFERENCES plans(id))
     `);
 
-    db.exec(`
+  const row = await db.get("SELECT COUNT(1) as c FROM purchases");
+  if (!row || row.c === 0) {
+    await db.run(`
       INSERT INTO purchases (client_id, plan_id, quantity) VALUES
       (1, 2, 1)
     `);
-  });
+  }
 }
 
 export async function selectPurchases(req, res) {
-  openDb().then((db) => {
-    db.all(`
+  try {
+    const db = await openDb();
+    const purchases = await db.all(`
       SELECT 
       purchases.id,
       clients.name AS client_name,
@@ -35,8 +38,12 @@ export async function selectPurchases(req, res) {
     JOIN clients ON purchases.client_id = clients.id
     JOIN plans ON purchases.plan_id = plans.id
     ORDER BY purchase_date DESC
-    `).then(purchases => res.json(purchases));
-  });
+    `);
+    res.json(purchases);
+  } catch (err) {
+    console.error('Error selecting purchases:', err);
+    res.status(500).json({ statusCode: '500', message: 'Error selecting purchases' });
+  }
 }
 
 export async function insertPurchase(req, res) {
@@ -54,10 +61,7 @@ export async function insertPurchase(req, res) {
       "INSERT INTO purchases (client_id, plan_id, quantity) VALUES (?, ?, ?)",
       [purchase.client_id, purchase.plan_id, purchase.quantity]
     );
-    return res.json({
-      statusCode: '200',
-      message: 'Purchase successfully registered'
-    });
+    return res.json({ statusCode: '200', message: 'Purchase successfully registered' });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ statusCode: '500', message: 'Error registering purchase' });

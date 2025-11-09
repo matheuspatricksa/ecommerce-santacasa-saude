@@ -17,9 +17,13 @@ async function request(path, { method = 'GET', body, headers = {} } = {}) {
   const data = isJson ? await res.json() : await res.text();
 
   if (!res.ok) {
-    const message = isJson ? (data.message || JSON.stringify(data)) : data;
-    throw new Error(message || `Erro ${res.status}`);
+    const message = isJson ? (data?.message || JSON.stringify(data)) : data;
+    const err = new Error(message || `Erro ${res.status}`);
+    err.status = res.status;
+    err.body = data;
+    throw err;
   }
+
   return data;
 }
 

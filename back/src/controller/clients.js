@@ -1,41 +1,50 @@
 import { openDb } from "../configDB.js";
 
 export async function createClientTable() {
-  openDb().then((db) => {
-    db.exec(`
+  const db = await openDb();
+  await db.exec(`
       CREATE TABLE IF NOT EXISTS clients
-      (id INTEGER PRIMARY KEY,
+      (id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       email TEXT NOT NULL)
     `);
 
-    db.exec(`
+  const row = await db.get("SELECT COUNT(1) as c FROM clients");
+  if (!row || row.c === 0) {
+    await db.run(`
       INSERT INTO clients (name, email) VALUES
       ('João Silva', 'joao@email.com'),
       ('Maria Souza', 'maria@email.com'),
       ('Carlos Pereira', 'carlos@email.com');
-      `)
-  });
+    `);
+  }
 }
 
 export async function selectClients(req, res) {
-  openDb().then((db) => {
-    db.all("SELECT * FROM clients").then(clients => res.json(clients));
-  });
+  try {
+    const db = await openDb();
+    const clients = await db.all("SELECT * FROM clients");
+    res.json(clients);
+  } catch (err) {
+    console.error('Error selecting clients:', err);
+    res.status(500).json({ statusCode: '500', message: 'Error selecting clients' });
+  }
 }
 
 export async function selectClient(req, res) {
-  // Permite id via body (atual) ou via query string para facilitar integração (GET com fetch)
-  const id = req.body.id || req.query.id;
-  if (!id) {
-    return res.status(400).json({ statusCode: '400', message: 'Client id is required' });
+  try {
+    const id = req.body.id || req.query.id;
+    if (!id) {
+      return res.status(400).json({ statusCode: '400', message: 'Client id is required' });
+    }
+    const db = await openDb();
+    const client = await db.get("SELECT * FROM clients WHERE id=?", [id]);
+    if (!client) return res.status(404).json({ statusCode: '404', message: 'Client not found' });
+    res.json(client);
+  } catch (err) {
+    console.error('Error selecting client:', err);
+    res.status(500).json({ statusCode: '500', message: 'Error selecting client' });
   }
-  openDb().then((db) => {
-    db.get("SELECT * FROM clients WHERE id=?", [id]).then(client => {
-      if (!client) return res.status(404).json({ statusCode: '404', message: 'Client not found' });
-      res.json(client);
-    });
-  });
 }
 
 export async function insertClient(req, res) {
@@ -49,16 +58,10 @@ export async function insertClient(req, res) {
       "INSERT INTO clients (name, email) VALUES (?, ?)",
       [client.name, client.email]
     );
-    res.json({
-      statusCode: '200',
-      message: 'Client successfully added'
-    });
+    res.json({ statusCode: '200', message: 'Client successfully added' });
   } catch (error) {
     console.error('Error inserting client:', error);
-    res.status(500).json({
-      statusCode: '500',
-      message: 'Error inserting client'
-    });
+    res.status(500).json({ statusCode: '500', message: 'Error inserting client' });
   }
 }
 
@@ -73,16 +76,10 @@ export async function updateClient(req, res) {
       "UPDATE clients SET name = ?, email = ? WHERE id = ?",
       [client.name, client.email, client.id]
     );
-    res.json({
-      statusCode: '200',
-      message: 'Client successfully updated'
-    });
+    res.json({ statusCode: '200', message: 'Client successfully updated' });
   } catch (error) {
     console.error('Error updating client:', error);
-    res.status(500).json({
-      statusCode: '500',
-      message: 'Error updating client'
-    });
+    res.status(500).json({ statusCode: '500', message: 'Error updating client' });
   }
 }
 
@@ -99,15 +96,9 @@ export async function deleteClient(req, res) {
       return res.status(409).json({ statusCode: '409', message: 'Não é possível excluir: cliente possui compras registradas.' });
     }
     await db.run("DELETE FROM clients WHERE id=?", [id]);
-    res.json({
-      statusCode: '200',
-      message: 'Client successfully deleted.'
-    });
+    res.json({ statusCode: '200', message: 'Client successfully deleted.' });
   } catch (error) {
     console.error('Error deleting client:', error);
-    res.status(500).json({
-      statusCode: '500',
-      message: 'Error deleting client'
-    });
+    res.status(500).json({ statusCode: '500', message: 'Error deleting client' });
   }
 }
