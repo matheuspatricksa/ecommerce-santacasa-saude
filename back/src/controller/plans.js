@@ -9,6 +9,13 @@ export async function createPlanTable() {
       price DECIMAL(10, 2),
       description TEXT)
     `);
+
+    db.exec(`
+      INSERT INTO plans (name, price, description) VALUES
+      ('Plano Básico', 99.90, 'Ideal para quem quer economizar.'),
+      ('Plano Premium', 199.90, 'Cobertura completa com benefícios.'),
+      ('Plano Família', 299.90, 'Plano para toda a família.');
+      `)
   });
 }
 

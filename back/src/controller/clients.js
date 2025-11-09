@@ -8,6 +8,13 @@ export async function createClientTable() {
       name TEXT NOT NULL,
       email TEXT NOT NULL)
     `);
+
+    db.exec(`
+      INSERT INTO clients (name, email) VALUES
+      ('João Silva', 'joao@email.com'),
+      ('Maria Souza', 'maria@email.com'),
+      ('Carlos Pereira', 'carlos@email.com');
+      `)
   });
 }
 

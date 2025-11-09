@@ -12,6 +12,11 @@ export async function createPurchaseTable() {
       FOREIGN KEY (client_id) REFERENCES clients(id),
       FOREIGN KEY (plan_id) REFERENCES plans(id))
     `);
+
+    db.exec(`
+      INSERT INTO purchases (client_id, plan_id, quantity) VALUES
+      (1, 2, 1)
+    `);
   });
 }
 
