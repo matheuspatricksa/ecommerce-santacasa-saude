@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { selectPlans, selectPlan, insertPlan, updatePlan, deletePlan } from './controller/plans.js';
 import { selectClients, selectClient, insertClient, updateClient, deleteClient } from './controller/clients.js';
+import { selectPurchases, insertPurchase } from './controller/purchases.js';
 
 const router = Router();
 
@@ -26,6 +27,8 @@ router.post('/client', insertClient); //ok
 router.put('/client', updateClient);  //ok
 router.delete('/client', deleteClient); //ok
 
-// Orders routes
+// Purchases routes
+router.get('/purchases', selectPurchases); //ok
+router.post('/purchase', insertPurchase); //ok
 
 export default router;

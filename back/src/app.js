@@ -5,11 +5,13 @@ import https from 'https';
 import cors from 'cors';
 import { createPlanTable } from './controller/plans.js';
 import { createClientTable } from './controller/clients.js';
+import { createPurchaseTable } from './controller/purchases.js';
 
 const app = express();
 
 createPlanTable();
 createClientTable();
+createPurchaseTable();
 
 app.use(express.json());
 app.use(router);
