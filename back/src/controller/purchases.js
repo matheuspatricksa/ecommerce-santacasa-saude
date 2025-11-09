@@ -35,55 +35,26 @@ export async function selectPurchases(req, res) {
 }
 
 export async function insertPurchase(req, res) {
-  let purchase = req.body;
-  
-  // Validação básica
-  if (!purchase.client_id || !purchase.plan_id) {
-    return res.status(400).json({
-      "statusCode": '400',
-      "message": "client_id and plan_id are required"
-    });
-  }
+  try {
+    const purchase = req.body;
+    if (!purchase.client_id || !purchase.plan_id || !purchase.quantity) {
+      return res.status(400).json({ statusCode: '400', message: 'client_id, plan_id and quantity are required' });
+    }
     const db = await openDb();
-    
-    // Verifica se o cliente existe
     const client = await db.get("SELECT * FROM clients WHERE id = ?", [purchase.client_id]);
-    if (!client) {
-      return res.status(404).json({
-        "statusCode": '404',
-        "message": "Client not found"
-      });
-    }
-
-    // Verifica se o plano existe
+    if (!client) return res.status(404).json({ statusCode: '404', message: 'Client not found' });
     const plan = await db.get("SELECT * FROM plans WHERE id = ?", [purchase.plan_id]);
-    if (!plan) {
-      return res.status(404).json({
-        "statusCode": '404',
-        "message": "Plan not found"
-      });
-    }
-
-    // Insere a compra
+    if (!plan) return res.status(404).json({ statusCode: '404', message: 'Plan not found' });
     await db.run(
       "INSERT INTO purchases (client_id, plan_id, quantity) VALUES (?, ?, ?)",
       [purchase.client_id, purchase.plan_id, purchase.quantity]
     );
-
-    res.json({
-      "statusCode": '200',
-      "message": "Purchase successfully registered",
-      "data": {
-        "client_name": client.name,
-        "client_email": client.email,
-        "plan_name": plan.name,
-        "plan_price": plan.price,
-        "quantity": purchase.quantity,
-        "purchase_date": purchase.purchase_date
-      }
+    return res.json({
+      statusCode: '200',
+      message: 'Purchase successfully registered'
     });
-    res.status(500).json({
-      "statusCode": '500',
-      "message": "Error registering purchase"
-    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ statusCode: '500', message: 'Error registering purchase' });
   }
+}

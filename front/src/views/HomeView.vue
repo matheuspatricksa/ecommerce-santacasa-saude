@@ -226,13 +226,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { Icon } from "@iconify/vue";
 import HeaderApp from '@/components/HeaderApp.vue';
 import HeroSection from '@/components/HeroSection.vue';
 import TabNavigation from '@/components/TabNavigation.vue';
 import DataTable from '@/components/DataTable.vue';
 import ModalForm from '@/components/ModalForm.vue';
+import { 
+  getPlans, createPlan, updatePlan, deletePlan,
+  getClients, createClient, updateClient, deleteClient,
+  getPurchases, createPurchase
+} from '@/services/api.js';
 
 const activeTab = ref('plans');
 const showModal = ref('');
@@ -283,69 +288,88 @@ const newPurchase = ref({
   quantity: 1
 });
 
+// Dados vindos do backend
+const clients = ref([]);
+const plansAvailable = ref([]);
+const purchases = ref([]);
 
-// Dados simulados para as tabelas
-const clients = ref([
-  { id: 1, name: 'João Silva', email: 'joao.silva@email.com', date: '05/11/2025' },
-  { id: 2, name: 'Maria Santos', email: 'maria.santos@email.com', date: '05/11/2025' },
-  { id: 3, name: 'Pedro Oliveira', email: 'pedro.oliveira@email.com', date: '05/11/2025' },
-  { id: 4, name: 'Ana Costa', email: 'ana.costa@email.com', date: '05/11/2025' }
-]);
+const loading = ref(false);
+const errorMessage = ref('');
 
-const plansAvailable = ref([
-  { id: 5, name: 'Plano Básico Individual', price: 189.90, description: 'Plano de saúde ideal para pessoas que buscam cobertura essencial com consultas e exames básicos.', date: '05/11/2025' },
-  { id: 6, name: 'Plano Familiar Essencial', price: 349.90, description: 'Plano de saúde para famílias, oferecendo cobertura abrangente para todos os membros.', date: '05/11/2025' },
-  { id: 7, name: 'Plano Premium Executivo', price: 789.90, description: 'Plano de saúde completo com cobertura ampla, ideal para profissionais que buscam o melhor em atendimento médico.', date: '05/11/2025' },
-  { id: 8, name: 'Plano Empresarial Corporativo', price: 1299.90, description: 'Plano de saúde voltado para empresas, oferecendo benefícios exclusivos para colaboradores.', date: '05/11/2025' }
-]);
+// Função para carregar todos os dados do backend
+async function loadAll() {
+  loading.value = true;
+  errorMessage.value = '';
+  try {
+    const [plans, cls, pchs] = await Promise.all([
+      getPlans(),
+      getClients(),
+      getPurchases()
+    ]);
+    plansAvailable.value = plans.map(p => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      price: p.price,
+      date: '-' // backend não fornece data de cadastro
+    }));
+    clients.value = cls.map(c => ({
+      id: c.id,
+      name: c.name,
+      email: c.email,
+      date: '-' // backend não fornece data de cadastro
+    }));
+    purchases.value = pchs.map(item => ({
+      id: item.id,
+      client: item.client_name,
+      email: item.client_email,
+      plan: item.plan_name,
+      quantity: item.quantity,
+      total: Number(item.plan_price) * Number(item.quantity),
+      date: new Date(item.purchase_date).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    }));
+  } catch (e) {
+    console.error(e);
+    errorMessage.value = e.message || 'Erro ao carregar dados';
+  } finally {
+    loading.value = false;
+  }
+}
 
-const purchases = ref([
-  { id: 9, client: 'João Silva', email: 'joao.silva@email.com', plan: 'Plano Premium Executivo', quantity: 2, total: 1579.80, date: '05/11/2025, 18:40' },
-  { id: 10, client: 'Maria Santos', email: 'maria.santos@email.com', plan: 'Plano Familiar Essencial', quantity: 1, total: 349.90, date: '05/11/2025, 14:20' },
-  { id: 11, client: 'Pedro Oliveira', email: 'pedro.oliveira@email.com', plan: 'Plano Básico Individual', quantity: 1, total: 189.90, date: '05/11/2025, 09:15' },
-  { id: 12, client: 'Ana Costa', email: 'ana.costa@email.com', plan: 'Plano Empresarial Corporativo', quantity: 3, total: 3899.70, date: '05/11/2025, 11:30' }
-])
+// Carrega dados ao montar o componente
+onMounted(loadAll);
 
 const closeModal = () => {
   showModal.value = '';
   temporaryEdit.value = null;
 };
 
-const handleSubmit = () => {
-  if (showModal.value === 'client') {
-    clients.value.push({
-      name: newClient.value.name,
-      email: newClient.value.email,
-      date: new Date().toLocaleDateString()
-    });
-    newClient.value = { name: '', email: '' };
-    showModal.value = '';
-    return;
-  } else if (showModal.value === 'purchase') {
-    purchases.value.push({
-      client: selectedClient.value.name,
-      email: selectedClient.value.email,
-      plan: selectedPlan.value.name,
-      quantity: newPurchase.value.quantity,
-      total: (selectedPlan.value.price * newPurchase.value.quantity).toFixed(2),
-      date: new Date().toLocaleDateString() + ', ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    });
-    newPurchase.value = { client: null, plan: null, quantity: 1 };
-    selectedClient.value = null;
-    selectedPlan.value = null;
-    showModal.value = '';
-    return;
-  } else {
-    plansAvailable.value.push({
-      name: newPlan.value.name,
-      price: newPlan.value.price,
-      description: newPlan.value.description,
-      date: new Date().toLocaleDateString()
-    });
-    newPlan.value = { name: '', price: '', description: '' };
-    showModal.value = '';
+const handleSubmit = async () => {
+  try {
+    if (showModal.value === 'client') {
+      await createClient({ name: newClient.value.name, email: newClient.value.email });
+      await loadAll();
+      newClient.value = { name: '', email: '' };
+      showModal.value = '';
+      return;
+    } else if (showModal.value === 'purchase') {
+      if (!selectedClient.value || !selectedPlan.value) throw new Error('Selecione cliente e plano');
+      await createPurchase({ client_id: selectedClient.value.id, plan_id: selectedPlan.value.id, quantity: Number(newPurchase.value.quantity) || 1 });
+      await loadAll();
+      newPurchase.value = { client: null, plan: null, quantity: 1 };
+      selectedClient.value = null;
+      selectedPlan.value = null;
+      showModal.value = '';
+      return;
+    } else {
+      await createPlan({ name: newPlan.value.name, price: Number(newPlan.value.price), description: newPlan.value.description });
+      await loadAll();
+      newPlan.value = { name: '', price: '', description: '' };
+      showModal.value = '';
+    }
+  } catch (e) {
+    alert(e.message || 'Erro ao salvar');
   }
-
 };
 
 const selectClient = (client) => {
@@ -367,27 +391,27 @@ const openEditModal = (value, type) => {
   }
 };
 
-const editMode = () => {
+const editMode = async () => {
   if (!temporaryEdit.value) return;
-  if (showModal.value === 'editClient') {
-    const index = clients.value.findIndex(c => c.id === temporaryEdit.value.id);
-    if (index !== -1) {
-      clients.value[index] = { ...temporaryEdit.value };
+  try {
+    if (showModal.value === 'editClient') {
+      await updateClient({ id: temporaryEdit.value.id, name: temporaryEdit.value.name, email: temporaryEdit.value.email });
+      await loadAll();
+      temporaryEdit.value = null;
+      showModal.value = '';
+      return;
+    } else if (showModal.value === 'editPlan') {
+      await updatePlan({ id: temporaryEdit.value.id, name: temporaryEdit.value.name, price: Number(temporaryEdit.value.price), description: temporaryEdit.value.description });
+      await loadAll();
+      temporaryEdit.value = null;
+      showModal.value = '';
     }
-    temporaryEdit.value = null;
-    showModal.value = '';
-    return;
-  } else if (showModal.value === 'editPlan') {
-    const index = plansAvailable.value.findIndex(p => p.id === temporaryEdit.value.id);
-    if (index !== -1) {
-      plansAvailable.value[index] = { ...temporaryEdit.value };
-    }
-    temporaryEdit.value = null;
-    showModal.value = '';
+  } catch (e) {
+    alert(e.message || 'Erro ao atualizar');
   }
 };
 
-const deleteItem = (id, type) => {
+const deleteItem = async (id, type) => {
   const confirmDelete = window.confirm('Tem certeza que deseja excluir este item?');
   if (!confirmDelete) return;
 
@@ -401,8 +425,13 @@ const deleteItem = (id, type) => {
       alert('Não é possível excluir este cliente pois ele possui compras registradas.');
       return;
     }
-
-    clients.value = clients.value.filter(client => client.id !== id);
+    try {
+      await deleteClient(id);
+      await loadAll();
+    } catch (e) {
+      // Se o backend impedir a exclusão por compras vinculadas (409)
+      alert(e.message || 'Erro ao excluir cliente');
+    }
   } else if (type === 'plan') {
     // Verifica se o plano tem compras antes de excluir
     const hasOrders = purchases.value.some(purchase =>
@@ -413,8 +442,12 @@ const deleteItem = (id, type) => {
       alert('Não é possível excluir este plano pois existem compras registradas com ele.');
       return;
     }
-
-    plansAvailable.value = plansAvailable.value.filter(plan => plan.id !== id);
+    try {
+      await deletePlan(id);
+      await loadAll();
+    } catch (e) {
+      alert(e.message || 'Erro ao excluir plano');
+    }
   }
 };
 </script>

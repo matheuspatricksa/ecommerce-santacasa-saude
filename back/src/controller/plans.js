@@ -19,48 +19,88 @@ export async function selectPlans(req, res) {
 }
 
 export async function selectPlan(req, res) {
-  let id = req.body.id;
+  const id = req.body.id || req.query.id;
+  if (!id) {
+    return res.status(400).json({ statusCode: '400', message: 'Plan id is required' });
+  }
   openDb().then((db) => {
-    db.get("SELECT * FROM plans WHERE id=?", [id]) .then(plan => res.json(plan));
+    db.get("SELECT * FROM plans WHERE id=?", [id]).then(plan => {
+      if (!plan) return res.status(404).json({ statusCode: '404', message: 'Plan not found' });
+      res.json(plan);
+    });
   });
 }
 
 export async function insertPlan(req, res) {
-  let plan = req.body;
-  openDb().then((db) => {
-    db.run(
+  try {
+    const plan = req.body;
+    if (!plan.name || !plan.price || !plan.description) {
+      return res.status(400).json({ statusCode: '400', message: 'Name, price and description are required' });
+    }
+    const db = await openDb();
+    await db.run(
       "INSERT INTO plans (name, price, description) VALUES (?, ?, ?)",
       [plan.name, plan.price, plan.description]
     );
-  });
-  res.json({
-    "statusCode": '200',
-    "message": "Plan successfully added"
-
-  });
+    res.json({
+      statusCode: '200',
+      message: 'Plan successfully added'
+    });
+  } catch (error) {
+    console.error('Error inserting plan:', error);
+    res.status(500).json({
+      statusCode: '500',
+      message: 'Error inserting plan'
+    });
+  }
 }
 
 export async function updatePlan(req, res) {
-  let plan = req.body;
-  openDb().then((db) => {
-    db.run(
+  try {
+    const plan = req.body;
+    if (!plan.id || !plan.name || !plan.price || !plan.description) {
+      return res.status(400).json({ statusCode: '400', message: 'Id, name, price and description are required' });
+    }
+    const db = await openDb();
+    await db.run(
       "UPDATE plans SET name = ?, price = ?, description = ? WHERE id = ?",
       [plan.name, plan.price, plan.description, plan.id]
     );
-  });
-  res.json({
-    "statusCode": '200',
-    "message": "Plan successfully updated"
-  });
+    res.json({
+      statusCode: '200',
+      message: 'Plan successfully updated'
+    });
+  } catch (error) {
+    console.error('Error updating plan:', error);
+    res.status(500).json({
+      statusCode: '500',
+      message: 'Error updating plan'
+    });
+  }
 }
 
 export async function deletePlan(req, res) {
-  let id = req.body.id;
-  openDb().then((db) => {
-    db.get("DELETE FROM plans WHERE id=?", [id]) .then(res => res);
-  });
-  res.json({
-    "statusCode": '200',
-    "message": "Plan successfully deleted."
-  });
+  const id = req.query.id;
+  if (!id) {
+    return res.status(400).json({ statusCode: '400', message: 'Plan id is required' });
+  }
+  try {
+    const db = await openDb();
+    // Verifica se há compras associadas a este plano
+    const purchase = await db.get("SELECT 1 FROM purchases WHERE plan_id = ? LIMIT 1", [id]);
+    if (purchase) {
+      return res.status(409).json({ statusCode: '409', message: 'Não é possível excluir: plano possui compras registradas.' });
+    }
+    await db.run("DELETE FROM plans WHERE id=?", [id]);
+    res.json({
+      statusCode: '200',
+      message: 'Plan successfully deleted.'
+    });
+  } catch (error) {
+    console.error('Error deleting plan:', error);
+    res.status(500).json({
+      statusCode: '500',
+      message: 'Error deleting plan'
+    });
+  }
 }
