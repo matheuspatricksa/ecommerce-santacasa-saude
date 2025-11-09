@@ -3,16 +3,15 @@
 Este projeto é uma aplicação de e-commerce para planos de saúde, composta por duas partes principais:
 
 ## Frontend
-- **Tecnologias:** Vue.js, Vite, Cypress (testes), Vitest
+- **Tecnologias:** Javascript, Vue.js, Vite, Pinia, Axios
 - **Localização:** pasta `front/`
 - **Funcionalidades:**
 	- Interface moderna para navegação e compra de planos
 	- Componentes reutilizáveis (DataTable, ModalForm, Header, etc.)
 	- Rotas e páginas organizadas
-	- Testes end-to-end com Cypress
 
 ## Backend
-- **Tecnologias:** Node.js, Express
+- **Tecnologias:** Javascript, Node.js, Express
 - **Localização:** pasta `back/`
 - **Funcionalidades:**
 	- API REST para gerenciamento de clientes, planos e compras
@@ -44,7 +43,7 @@ npm install
 ### 2. Rodar o Backend
 ```powershell
 cd ../back
-node src/app.js
+npm run dev
 ```
 
 ### 3. Rodar o Frontend
@@ -55,20 +54,6 @@ npm run dev
 
 O frontend estará disponível em `http://localhost:5173` (ou porta configurada pelo Vite).
 O backend estará disponível em `https://localhost:3000` (ou porta configurada no app).
-
-### 4. Rodar os testes
-
-#### Testes do Frontend (Cypress)
-```powershell
-npx cypress open
-```
-
-#### Testes do Frontend (Vitest)
-```powershell
-npm run test
-```
-
----
 
 ## Estrutura de Pastas
 
