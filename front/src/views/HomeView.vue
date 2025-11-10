@@ -16,7 +16,7 @@
               <tr v-for="plan in plansAvailable" :key="plan.id" class="border-b border-gray-300">
                 <td class="p-4 align-middle">{{ plan.name }}</td>
                 <td class="p-4 align-middle truncate max-w-xs">{{ plan.description }}</td>
-                <td class="p-4 align-middle">{{ plan.price }}</td>
+                <td class="p-4 align-middle">R$ {{ plan.price }}</td>
                 <td class="p-4 align align-middle">{{ plan.date }}</td>
                 <td class="p-4 align-middle">
                   <div class="flex justify-end gap-2">
@@ -82,7 +82,7 @@
                   <span>{{ purchase.quantity }}</span>
                 </td>
                 <td class="p-4 align-middle">
-                  <span class="text-green-600">{{ purchase.total }}</span>
+                  <span class="text-green-600">R$ {{ purchase.total }}</span>
                 </td>
                 <td class="p-4 align-middle">{{ purchase.date }}</td>
               </tr>
