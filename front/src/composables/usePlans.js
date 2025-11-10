@@ -1,10 +1,13 @@
 import { ref } from 'vue';
 import { getPlans, createPlan as apiCreatePlan, updatePlan as apiUpdatePlan, deletePlan as apiDeletePlan } from '@/services/api.js';
+import { useToast } from './useToast.js';
 
 export function usePlans() {
   const planModal = ref('');
   const temporaryEdit = ref(null);
   const plansAvailable = ref([]);
+
+  const { success, error } = useToast();
 
   const planColumns = [
     { key: 'name', label: 'Nome do plano', align: 'left' },
@@ -17,8 +20,9 @@ export function usePlans() {
   const newPlan = ref({ name: '', price: '', description: '' });
 
   async function loadPlans() {
-    const plans = await getPlans();
-    plansAvailable.value = plans.map(p => ({
+    try {
+      const plans = await getPlans();
+      plansAvailable.value = plans.map(p => ({
       id: p.id,
       name: p.name,
       description: p.description,
@@ -28,6 +32,10 @@ export function usePlans() {
         timeZone: 'America/Sao_Paulo'
       }) : ''
     }));
+    } catch (err) {
+      console.error(err);
+      error('Erro ao carregar planos.');
+    }
   }
 
   const openEditPlan = (plan) => {
@@ -36,23 +44,41 @@ export function usePlans() {
   };
 
   const submitPlan = async () => {
-    await apiCreatePlan({ name: newPlan.value.name, price: Number(newPlan.value.price), description: newPlan.value.description });
-    await loadPlans();
-    newPlan.value = { name: '', price: '', description: '' };
-    planModal.value = '';
+    try {
+      await apiCreatePlan({ name: newPlan.value.name, price: Number(newPlan.value.price), description: newPlan.value.description });
+      await loadPlans();
+      newPlan.value = { name: '', price: '', description: '' };
+      planModal.value = '';
+      success('Plano criado com sucesso!');
+    } catch (err) {
+      console.error(err);
+      error('Erro ao criar plano.');
+    }
   };
 
   const editPlan = async () => {
     if (!temporaryEdit.value) return;
-    await apiUpdatePlan({ id: temporaryEdit.value.id, name: temporaryEdit.value.name, price: Number(temporaryEdit.value.price), description: temporaryEdit.value.description });
-    await loadPlans();
-    temporaryEdit.value = null;
-    planModal.value = '';
+    try {
+      await apiUpdatePlan({ id: temporaryEdit.value.id, name: temporaryEdit.value.name, price: Number(temporaryEdit.value.price), description: temporaryEdit.value.description });
+      await loadPlans();
+      temporaryEdit.value = null;
+      planModal.value = '';
+      success('Plano atualizado com sucesso!');
+    } catch (err) {
+      console.error(err);
+      error('Erro ao atualizar plano.');
+    }
   };
 
   const deletePlan = async (id) => {
-    await apiDeletePlan(id);
-    await loadPlans();
+    try {
+      await apiDeletePlan(id);
+      await loadPlans();
+      success('Plano deletado com sucesso!');
+    } catch (err) {
+      console.error(err);
+      error('Erro ao deletar plano.');
+    }
   };
 
   return {

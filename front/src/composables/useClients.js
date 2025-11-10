@@ -1,10 +1,13 @@
 import { ref } from 'vue';
 import { getClients, createClient as apiCreateClient, updateClient as apiUpdateClient, deleteClient as apiDeleteClient } from '@/services/api.js';
+import { useToast } from './useToast.js';
 
 export function useClients() {
   const clientModal = ref('');
   const temporaryEdit = ref(null);
   const clients = ref([]);
+
+  const { success, error } = useToast();
 
   const clientColumns = [
     { key: 'name', label: 'Nome', align: 'left' },
@@ -17,7 +20,9 @@ export function useClients() {
 
   async function loadClients() {
     const cls = await getClients();
-    clients.value = cls.map(c => ({
+    try {
+      const cls = await getClients();
+      clients.value = cls.map(c => ({
       id: c.id,
       name: c.name,
       email: c.email,
@@ -26,6 +31,10 @@ export function useClients() {
         timeZone: 'America/Sao_Paulo'
       }) : ''
     }) );
+    } catch (err) {
+      console.error(err);
+      error('Erro ao carregar clientes.');
+    }
   }
 
   const openEditClient = (client) => {
@@ -34,23 +43,41 @@ export function useClients() {
   };
 
   const submitClient = async () => {
-    await apiCreateClient({ name: newClient.value.name, email: newClient.value.email });
-    await loadClients();
-    newClient.value = { name: '', email: '' };
-    clientModal.value = '';
+    try {
+      await apiCreateClient({ name: newClient.value.name, email: newClient.value.email });
+      await loadClients();
+      newClient.value = { name: '', email: '' };
+      clientModal.value = '';
+      success('Cliente criado com sucesso!', { timeout: 4000 });
+    } catch (err) {
+      console.error(err);
+      error('Erro ao criar cliente. Verifique os dados e tente novamente.');
+    }
   };
 
   const editClient = async () => {
     if (!temporaryEdit.value) return;
-    await apiUpdateClient({ id: temporaryEdit.value.id, name: temporaryEdit.value.name, email: temporaryEdit.value.email });
-    await loadClients();
-    temporaryEdit.value = null;
-    clientModal.value = '';
+    try {
+      await apiUpdateClient({ id: temporaryEdit.value.id, name: temporaryEdit.value.name, email: temporaryEdit.value.email });
+      await loadClients();
+      temporaryEdit.value = null;
+      clientModal.value = '';
+      success('Cliente atualizado com sucesso!');
+    } catch (err) {
+      console.error(err);
+      error('Erro ao atualizar cliente.');
+    }
   };
 
   const deleteClient = async (id) => {
-    await apiDeleteClient(id);
-    await loadClients();
+    try {
+      await apiDeleteClient(id);
+      await loadClients();
+      success('Cliente deletado com sucesso!');
+    } catch (err) {
+      console.error(err);
+      error('Erro ao deletar cliente.');
+    }
   };
 
   return {
