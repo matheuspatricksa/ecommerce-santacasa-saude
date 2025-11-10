@@ -7,16 +7,17 @@ export async function createPlanTable() {
       (id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT,
       price DECIMAL(10, 2),
-      description TEXT)
+      description TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP)
     `);
 
   const row = await db.get("SELECT COUNT(1) as c FROM plans");
   if (!row || row.c === 0) {
     await db.run(`
-      INSERT INTO plans (name, price, description) VALUES
-      ('Plano Básico', 99.90, 'Ideal para quem quer economizar.'),
-      ('Plano Premium', 199.90, 'Cobertura completa com benefícios.'),
-      ('Plano Família', 299.90, 'Plano para toda a família.');
+      INSERT INTO plans (name, price, description, created_at) VALUES
+      ('Plano Básico', 99.90, 'Ideal para quem quer economizar.', CURRENT_TIMESTAMP),
+      ('Plano Premium', 199.90, 'Cobertura completa com benefícios.', CURRENT_TIMESTAMP),
+      ('Plano Família', 299.90, 'Plano para toda a família.', CURRENT_TIMESTAMP);
     `);
   }
 }
@@ -25,7 +26,14 @@ export async function selectPlans(req, res) {
   try {
     const db = await openDb();
     const plans = await db.all("SELECT * FROM plans");
-    res.json(plans);
+    const toIsoUtc = (s) => {
+      if (!s) return null;
+      if (s.endsWith('Z')) return s;
+      if (s.includes('T')) return `${s}Z`;
+      return `${s.replace(' ', 'T')}Z`;
+    };
+    const mapped = plans.map(p => ({ ...p, created_at: toIsoUtc(p.created_at) }));
+    res.json(mapped);
   } catch (err) {
     console.error('Error selecting plans:', err);
     res.status(500).json({ statusCode: '500', message: 'Error selecting plans' });
@@ -55,9 +63,12 @@ export async function insertPlan(req, res) {
       return res.status(400).json({ statusCode: '400', message: 'Name, price and description are required' });
     }
     const db = await openDb();
+    // Armazenar created_at em UTC (YYYY-MM-DD HH:MM:SS)
+    const now = new Date();
+    const created_at = now.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
     await db.run(
-      "INSERT INTO plans (name, price, description) VALUES (?, ?, ?)",
-      [plan.name, plan.price, plan.description]
+      "INSERT INTO plans (name, price, description, created_at) VALUES (?, ?, ?, ?)",
+      [plan.name, plan.price, plan.description, created_at]
     );
     res.json({ statusCode: '200', message: 'Plan successfully added' });
   } catch (error) {

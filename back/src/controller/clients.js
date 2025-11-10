@@ -6,16 +6,17 @@ export async function createClientTable() {
       CREATE TABLE IF NOT EXISTS clients
       (id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
-      email TEXT NOT NULL)
+      email TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP)
     `);
 
   const row = await db.get("SELECT COUNT(1) as c FROM clients");
   if (!row || row.c === 0) {
     await db.run(`
-      INSERT INTO clients (name, email) VALUES
-      ('João Silva', 'joao@email.com'),
-      ('Maria Souza', 'maria@email.com'),
-      ('Carlos Pereira', 'carlos@email.com');
+      INSERT INTO clients (name, email, created_at) VALUES
+      ('João Silva', 'joao@email.com', CURRENT_TIMESTAMP),
+      ('Maria Souza', 'maria@email.com', CURRENT_TIMESTAMP),
+      ('Carlos Pereira', 'carlos@email.com', CURRENT_TIMESTAMP);
     `);
   }
 }
@@ -24,7 +25,15 @@ export async function selectClients(req, res) {
   try {
     const db = await openDb();
     const clients = await db.all("SELECT * FROM clients");
-    res.json(clients);
+    // Conversão robusta para ISO UTC (YYYY-MM-DDTHH:MM:SSZ)
+    const toIsoUtc = (s) => {
+      if (!s) return null;
+      if (s.endsWith('Z')) return s;
+      if (s.includes('T')) return `${s}Z`;
+      return `${s.replace(' ', 'T')}Z`;
+    };
+    const mapped = clients.map(c => ({ ...c, created_at: toIsoUtc(c.created_at) }));
+    res.json(mapped);
   } catch (err) {
     console.error('Error selecting clients:', err);
     res.status(500).json({ statusCode: '500', message: 'Error selecting clients' });
@@ -40,7 +49,14 @@ export async function selectClient(req, res) {
     const db = await openDb();
     const client = await db.get("SELECT * FROM clients WHERE id=?", [id]);
     if (!client) return res.status(404).json({ statusCode: '404', message: 'Client not found' });
-    res.json(client);
+    const toIsoUtc = (s) => {
+      if (!s) return null;
+      if (s.endsWith('Z')) return s;
+      if (s.includes('T')) return `${s}Z`;
+      return `${s.replace(' ', 'T')}Z`;
+    };
+    const mapped = { ...client, created_at: toIsoUtc(client.created_at) };
+    res.json(mapped);
   } catch (err) {
     console.error('Error selecting client:', err);
     res.status(500).json({ statusCode: '500', message: 'Error selecting client' });
@@ -54,9 +70,12 @@ export async function insertClient(req, res) {
       return res.status(400).json({ statusCode: '400', message: 'Name and email are required' });
     }
     const db = await openDb();
+    // Armazenar timestamp em UTC no formato 'YYYY-MM-DD HH:MM:SS'
+    const now = new Date();
+    const created_at = now.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
     await db.run(
-      "INSERT INTO clients (name, email) VALUES (?, ?)",
-      [client.name, client.email]
+      "INSERT INTO clients (name, email, created_at) VALUES (?, ?, ?)",
+      [client.name, client.email, created_at]
     );
     res.json({ statusCode: '200', message: 'Client successfully added' });
   } catch (error) {

@@ -1,9 +1,12 @@
 import { ref } from 'vue';
 import { getPurchases, createPurchase as apiCreatePurchase } from '@/services/api.js';
+import { useToast } from './useToast.js';
 
 export function usePurchases() {
   const purchaseModal = ref('');
   const purchases = ref([]);
+
+  const { success, error } = useToast();
 
   const purchaseColumns = [
     { key: 'client', label: 'Cliente', align: 'left' },
@@ -20,16 +23,28 @@ export function usePurchases() {
   const showPlanDropdown = ref(false);
 
   async function loadPurchases() {
-    const pchs = await getPurchases();
-    purchases.value = pchs.map(item => ({
+    try {
+      const pchs = await getPurchases();
+      purchases.value = pchs.map(item => ({
       id: item.id,
       client: item.client_name,
       email: item.client_email,
       plan: item.plan_name,
       quantity: item.quantity,
       total: Number(item.plan_price) * Number(item.quantity),
-      date: new Date(item.purchase_date).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      date: item.purchase_date ? new Date(item.purchase_date).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'America/Sao_Paulo'
+      }) : ''
     }));
+    } catch (err) {
+      console.error(err);
+      error('Erro ao carregar compras.');
+    }
   }
 
   const selectClient = (client) => {
@@ -43,13 +58,22 @@ export function usePurchases() {
   };
 
   const submitPurchase = async () => {
-    if (!selectedClient.value || !selectedPlan.value) throw new Error('Selecione cliente e plano');
-    await apiCreatePurchase({ client_id: selectedClient.value.id, plan_id: selectedPlan.value.id, quantity: Number(newPurchase.value.quantity) || 1 });
-    await loadPurchases();
-    newPurchase.value = { client: null, plan: null, quantity: 1 };
-    selectedClient.value = null;
-    selectedPlan.value = null;
-    purchaseModal.value = '';
+    try {
+      if (!selectedClient.value || !selectedPlan.value) {
+        error('Selecione cliente e plano antes de finalizar a compra.');
+        return;
+      }
+      await apiCreatePurchase({ client_id: selectedClient.value.id, plan_id: selectedPlan.value.id, quantity: Number(newPurchase.value.quantity) || 1 });
+      await loadPurchases();
+      newPurchase.value = { client: null, plan: null, quantity: 1 };
+      selectedClient.value = null;
+      selectedPlan.value = null;
+      purchaseModal.value = '';
+      success('Compra registrada com sucesso!');
+    } catch (err) {
+      console.error(err);
+      error('Erro ao processar a compra. Tente novamente.');
+    }
   };
 
   return {
