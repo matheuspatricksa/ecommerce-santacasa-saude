@@ -28,7 +28,14 @@ export function usePurchases() {
       plan: item.plan_name,
       quantity: item.quantity,
       total: Number(item.plan_price) * Number(item.quantity),
-      date: new Date(item.purchase_date).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      date: item.purchase_date ? new Date(item.purchase_date).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'America/Sao_Paulo'
+      }) : ''
     }));
   }
 

@@ -26,20 +26,28 @@ export async function selectPurchases(req, res) {
   try {
     const db = await openDb();
     const purchases = await db.all(`
-      SELECT 
-      purchases.id,
-      clients.name AS client_name,
-      clients.email AS client_email,
-      plans.name AS plan_name,
-      plans.price AS plan_price,
-      purchases.quantity,
-      purchase_date
-    FROM purchases
-    JOIN clients ON purchases.client_id = clients.id
-    JOIN plans ON purchases.plan_id = plans.id
-    ORDER BY purchase_date DESC
+        SELECT 
+        purchases.id,
+        clients.name AS client_name,
+        clients.email AS client_email,
+        plans.name AS plan_name,
+        plans.price AS plan_price,
+        purchases.quantity,
+        purchases.purchase_date
+        FROM purchases
+        JOIN clients ON purchases.client_id = clients.id
+        JOIN plans ON purchases.plan_id = plans.id
+        ORDER BY purchases.purchase_date DESC
     `);
-    res.json(purchases);
+    // Converter purchase_date para ISO UTC (YYYY-MM-DDTHH:MM:SSZ) de forma robusta
+    const toIsoUtc = (s) => {
+      if (!s) return null;
+      if (s.endsWith('Z')) return s;
+      if (s.includes('T')) return `${s}Z`;
+      return `${s.replace(' ', 'T')}Z`;
+    };
+    const mapped = purchases.map(p => ({ ...p, purchase_date: toIsoUtc(p.purchase_date) }));
+    res.json(mapped);
   } catch (err) {
     console.error('Error selecting purchases:', err);
     res.status(500).json({ statusCode: '500', message: 'Error selecting purchases' });
@@ -57,9 +65,12 @@ export async function insertPurchase(req, res) {
     if (!client) return res.status(404).json({ statusCode: '404', message: 'Client not found' });
     const plan = await db.get("SELECT * FROM plans WHERE id = ?", [purchase.plan_id]);
     if (!plan) return res.status(404).json({ statusCode: '404', message: 'Plan not found' });
+    // Armazenar purchase_date em UTC (YYYY-MM-DD HH:MM:SS)
+    const now = new Date();
+    const purchase_date = now.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
     await db.run(
-      "INSERT INTO purchases (client_id, plan_id, quantity) VALUES (?, ?, ?)",
-      [purchase.client_id, purchase.plan_id, purchase.quantity]
+      "INSERT INTO purchases (client_id, plan_id, quantity, purchase_date) VALUES (?, ?, ?, ?)",
+      [purchase.client_id, purchase.plan_id, purchase.quantity, purchase_date]
     );
     return res.json({ statusCode: '200', message: 'Purchase successfully registered' });
   } catch (e) {

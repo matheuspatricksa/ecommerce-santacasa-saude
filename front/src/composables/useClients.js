@@ -17,7 +17,15 @@ export function useClients() {
 
   async function loadClients() {
     const cls = await getClients();
-    clients.value = cls.map(c => ({ id: c.id, name: c.name, email: c.email, date: '-' }));
+    clients.value = cls.map(c => ({
+      id: c.id,
+      name: c.name,
+      email: c.email,
+      date: c.created_at ? new Date(c.created_at).toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit',
+        timeZone: 'America/Sao_Paulo'
+      }) : ''
+    }) );
   }
 
   const openEditClient = (client) => {
